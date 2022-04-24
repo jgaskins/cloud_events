@@ -1,0 +1,9 @@
+name: cloud_events
+version: 0.1.0
+
+authors:
+  - Jamie Gaskins <jgaskins@hey.com>
+
+crystal: 1.4.0
+
+license: MIT
