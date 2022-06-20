@@ -25,7 +25,7 @@ jobs:
     - name: Build and push
       uses: docker/build-push-action@v3
       with:
-        file: {context}/Dockerfile.hello_world
+        file: Dockerfile.hello_world
         tags: registry.digitalocean.com/jgaskins/cloud_events:example
         push: true
 #     - run: /usr/bin/docker build -t registry.digitalocean.com/jgaskins/cloud_events:example .
