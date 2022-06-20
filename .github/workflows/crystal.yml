@@ -19,9 +19,7 @@ jobs:
       with:
         token: ${{ secrets.DOCTL }}
     - name: debugging output
-      run:
-      - pwd
-      - ls -l
+      run: pwd && ls -l
     - name: Build and push
       uses: docker/build-push-action@v3
       with:
