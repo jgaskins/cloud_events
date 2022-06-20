@@ -18,10 +18,14 @@ jobs:
       uses: digitalocean/action-doctl@v2.1.0
       with:
         token: ${{ secrets.DOCTL }}
+    - name: debugging output
+      run:
+      - pwd
+      - ls -l
     - name: Build and push
       uses: docker/build-push-action@v3
       with:
-        file: Dockerfile.hello_world
+        file: {context}/Dockerfile.hello_world
         tags: registry.digitalocean.com/jgaskins/cloud_events:example
         push: true
 #     - run: /usr/bin/docker build -t registry.digitalocean.com/jgaskins/cloud_events:example .
