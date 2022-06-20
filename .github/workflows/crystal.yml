@@ -12,14 +12,16 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    container:
-      image: crystallang/crystal:1-alpine
-
     steps:
     - uses: actions/checkout@v3
     - name: Install doctl
       uses: digitalocean/action-doctl@v2.1.0
       with:
         token: ${{ secrets.DOCTL }}
-    - run: /usr/bin/docker build -t registry.digitalocean.com/jgaskins/cloud_events:example .
-    - run: /usr/bin/docker push registry.digitalocean.com/jgaskins/cloud_events:example
+    - name: Build and push
+      uses: docker/build-push-action@v3
+      with:
+        push: true
+        tags: registry.digitalocean.com/jgaskins/cloud_events:example
+#     - run: /usr/bin/docker build -t registry.digitalocean.com/jgaskins/cloud_events:example .
+#     - run: /usr/bin/docker push registry.digitalocean.com/jgaskins/cloud_events:example
