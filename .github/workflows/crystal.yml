@@ -1,0 +1,25 @@
+name: Crystal CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    container:
+      image: crystallang/crystal:alpine
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install doctl
+      uses: digitalocean/action-doctl@v2.1.0
+      with:
+        token: $DOCTL
+    - run: docker build -t registry.digitalocean.com/jgaskins/cloud_events:example .
+    - run: docker push registry.digitalocean.com/jgaskins/cloud_events:example
