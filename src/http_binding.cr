@@ -94,13 +94,30 @@ module CloudEvents
 
     def encode_event(uri : URI, event : Event)
       headers = HTTP::Headers{
-        "ce-type"        => event.type,
-        "ce-id"          => event.id,
-        "ce-source"      => event.source.to_s,
-        "ce-specversion" => event.spec_version,
-        "content-type"   => event.data_content_type,
-        "connection"     => "keep-alive",
+        "connection" => "keep-alive",
       }
+      # Required
+      # https://github.com/cloudevents/spec/blob/9b3a3c94497bdc2c4437a52b2e353c8c4b9003cb/cloudevents/spec.md#required-attributes
+      headers["ce-id"] = event.id
+      headers["ce-source"] = event.source.to_s
+      headers["ce-specversion"] = event.spec_version
+      headers["ce-type"] = event.type
+
+      # Optional attributes
+      # https://github.com/cloudevents/spec/blob/9b3a3c94497bdc2c4437a52b2e353c8c4b9003cb/cloudevents/spec.md#optional-attributes
+      if content_type = event.data_content_type.presence
+        headers["content-type"] = content_type
+      end
+      if schema = event.data_schema.presence
+        headers["ce-dataschema"] = schema
+      end
+      if subject = event.subject.presence
+        headers["ce-subject"] = subject
+      end
+      # This is guaranteed to be populated
+      headers["ce-time"] = event.time.to_rfc3339(fraction_digits: 9)
+
+      # TODO: Use the encoder for this
       body = event.data.to_json
 
       HTTP::Request.new(
