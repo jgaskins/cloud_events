@@ -1,0 +1,85 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: event-example
+---
+apiVersion: eventing.knative.dev/v1
+kind: Broker
+metadata:
+  name: kafka-broker
+  namespace: event-example
+  annotations:
+    eventing.knative.dev/broker.class: Kafka
+spec:
+  config:
+    apiVersion: v1
+    kind: ConfigMap
+    name: kafka-broker-config
+    namespace: knative-eventing
+  # delivery:
+  #   deadLetterSink:
+  #     ref:
+  #       apiVersion: serving.knative.dev/v1
+  #       kind: Service
+  #       name: dlq-service
+---
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: hello-world
+  namespace: event-example
+  labels:
+    networking.knative.dev/visibility: "cluster-local"
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/max-scale: "3"
+
+        # Uncomment to set autoscaling based on number of concurrent requests
+        # autoscaling.knative.dev/metric: "concurrency"
+        # autoscaling.knative.dev/target: "5"
+
+        # Uncomment to set autoscaling based on requests per second
+        autoscaling.knative.dev/metric: "rps"
+        autoscaling.knative.dev/target: "50"
+    spec:
+      containers:
+        - image: jgaskins/cloud_events:hello_world
+          imagePullPolicy: Always
+          env:
+            - name: DEFAULT_TARGET
+              value: "World"
+---
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: hello-world
+  namespace: event-example
+spec:
+  broker: kafka-broker
+  filter:
+    attributes:
+      type: hello-world.jgaskins.dev
+  subscriber:
+    ref:
+     apiVersion: v1
+     kind: Service
+     name: hello-world
+---
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: hello-world-stuff
+  namespace: event-example
+spec:
+  broker: kafka-broker
+  filter:
+    attributes:
+      type: stuff.jgaskins.dev
+  subscriber:
+    ref:
+     apiVersion: v1
+     kind: Service
+     name: hello-world

@@ -1,25 +1,21 @@
 require "http"
 require "uri"
-require "json"
 
 require "./event"
 require "./decoder"
+require "./encoder"
+require "./decoder/json"
+require "./encoder/json"
 
 module CloudEvents
-  module EventData
-    macro included
-      def self.new(io : IO, decoder : CloudEvents::Decoder)
-        decoder.call io, as: self
-      end
-    end
-  end
-
   struct HTTPBinding
     @types = {} of String => Proc(IO, Decoder, EventData)
     @decoders = {} of String => Proc(Decoder)
 
     def self.default
       new
+        .register_decoder("application/json", CloudEvents::Decoder::JSON)
+        .register_encoder("application/json", CloudEvents::Encoder::JSON)
     end
 
     def register_type(name, type : EventData.class) : self
@@ -32,11 +28,15 @@ module CloudEvents
       self
     end
 
+    def register_encoder(name, type : Encoder.class) : self
+      self
+    end
+
     def decode_event(context : HTTP::Server::Context, allow_opaque : Bool = false)
       decode_event context.request, allow_opaque: allow_opaque
     end
 
-    def decode_event(request, allow_opaque : Bool = false) : Event
+    def decode_event(request, allow_opaque : Bool = false)
       case request.method
       when /GET/i, /HEAD/i
         raise NotCloudEventError.new("Request method cannot be GET or HEAD")
@@ -52,7 +52,7 @@ module CloudEvents
                 in String
                   IO::Memory.new(body)
                 in Nil
-                  IO::Memory.new
+                  return
                 end
 
       if (type = @types[request.headers["ce-type"]?]?) && (decoder = @decoders[content_type_string]?)
@@ -61,14 +61,13 @@ module CloudEvents
 
       if result
         Event::V1.new(
-          data_encoded: "",
           data: result,
           id: request.headers.fetch("ce-id", ""),
           source: URI.parse(request.headers.fetch("ce-source", "")),
-          spec_version: request.headers.fetch("ce-specversion", ""),
+          spec_version: request.headers.fetch("ce-specversion", "1.0"),
           type: request.headers.fetch("ce-type", ""),
         )
-      else
+      elsif !request.headers.has_key?("ce-specversion")
         raise NotCloudEventError.new("Content-Type is #{content_type_string}, and CE-SpecVersion is not present")
       end
 
@@ -84,6 +83,32 @@ module CloudEvents
       #     type: "",
       #   )
       # end
+
+
+    ensure
+      # See https://github.com/crystal-lang/crystal/pull/11893
+      if (body = request.body).is_a? IO
+        body.skip_to_end
+      end
+    end
+
+    def encode_event(uri : URI, event : Event)
+      headers = HTTP::Headers{
+        "ce-type"        => event.type,
+        "ce-id"          => event.id,
+        "ce-source"      => event.source.to_s,
+        "ce-specversion" => event.spec_version,
+        "content-type"   => event.data_content_type,
+        "connection"     => "keep-alive",
+      }
+      body = event.data.to_json
+
+      HTTP::Request.new(
+        method: "POST",
+        resource: uri.path,
+        headers: headers,
+        body: body,
+      )
     end
 
     def percent_encode(str)
