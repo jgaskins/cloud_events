@@ -3,7 +3,7 @@ require "cloud_events/http_binding"
 
 require "interro"
 require "db"
-Interro.config { |c| c.db = DB.open("postgres:///") }
+Interro.config { |c| c.db = DB.open(ENV["DATABASE_URL"]) }
 
 events = CloudEvents::HTTPBinding.default
   .register_type("hello-world.jgaskins.dev", HelloWorld)
