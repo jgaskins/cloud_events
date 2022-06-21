@@ -68,7 +68,7 @@ module CloudEvents
           type: request.headers.fetch("ce-type", ""),
         )
       elsif !request.headers.has_key?("ce-specversion")
-        raise NotCloudEventError.new("Content-Type is #{content_type_string}, and CE-SpecVersion is not present")
+        raise NotCloudEventError.new("Content-Type is #{content_type_string}, and CE-SpecVersion is not present: #{request.headers.inspect}")
       end
 
       # if allow_opaque
