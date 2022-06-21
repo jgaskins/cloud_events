@@ -18,13 +18,8 @@ jobs:
       uses: digitalocean/action-doctl@v2.1.0
       with:
         token: ${{ secrets.DOCTL }}
-    - name: debugging output
-      run: pwd && ls -l
-    - name: Build and push
-      uses: docker/build-push-action@v3
+    - name: Push
+      uses: ripplr-io/docr-docker-publish@v1
       with:
-        file: examples/hello_world/Dockerfile
-        image: "registry.digitalocean.com/jgaskins/cloud_events_example:$GITHUB_REF_NAME"
-        push: true
-#     - run: /usr/bin/docker build -t registry.digitalocean.com/jgaskins/cloud_events:example .
-#     - run: /usr/bin/docker push registry.digitalocean.com/jgaskins/cloud_events:example
+        image_path: jgaskins/cloud_events_example
+        dockerfile: examples/hello_world/Dockerfile
