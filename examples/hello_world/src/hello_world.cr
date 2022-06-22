@@ -11,7 +11,7 @@ events = CloudEvents::HTTPBinding.default
   .register_type("orders.created", Events::Orders::Created)
 
 in_flight = Atomic.new(0)
-http = HTTP::Server.new([HTTP::LogHandler.new]) do |context|
+http = HTTP::Server.new do |context|
   in_flight.add 1
   if event = events.decode_event(context)
     handle event.data
@@ -42,7 +42,7 @@ def handle(data : Stuff)
 end
 
 def handle(data : Events::Orders::Created)
-  pp OrderQuery.new.create(data)
+  OrderQuery.new.create(data)
 end
 
 # #### Event definitions #####
